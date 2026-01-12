@@ -199,6 +199,18 @@ menu_socks() {
     menu
 }
 
+menu_ports() {
+    clear
+    echo -e "${BLUE}=== PORT INFO ===${NC}"
+    echo -e "Service   Port      Protocol"
+    echo -e "------------------------------"
+    netstat -nutlp | grep -E 'xray|nginx' | awk '{print $7 " " $4}' | awk -F'/' '{print $2 " " $1}' | sort | uniq
+    echo -e "------------------------------"
+    echo -e "OpenVPN/SSH might be on other ports."
+    read -p "Press Enter to back"
+    menu
+}
+
 menu_settings() {
     clear
     echo -e "${BLUE}=== SETTINGS MENU ===${NC}"
@@ -234,7 +246,8 @@ menu() {
     echo -e "[04] TROJAN MENU"
     echo -e "[05] SOCKS5 SETTINGS"
     echo -e "[06] CHANGE PORTS"
-    echo -e "[07] RESTART SERVICES"
+    echo -e "[07] CHECK PORTS"
+    echo -e "[08] RESTART SERVICES"
     echo -e "[00] EXIT"
     echo -e ""
     read -p "Select Menu [1-7]: " opt
@@ -246,7 +259,8 @@ menu() {
         4) menu_trojan ;;
         5) menu_socks ;;
         6) menu_settings ;;
-        7) systemctl restart xray nginx ; echo "Services Restarted" ; sleep 2 ; menu ;;
+        7) menu_ports ;;
+        8) systemctl restart xray nginx ; echo "Services Restarted" ; sleep 2 ; menu ;;
         0) exit 0 ;;
         *) echo "Invalid Option" ; sleep 1 ; menu ;;
     esac
