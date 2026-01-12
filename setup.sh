@@ -83,20 +83,169 @@ main() {
     install_nginx
     setup_domain
     
-    # Copy Configurations
-    log "Copying configurations..."
+    # Repo Config (Ganti INI dengan Username/Repo GitHub mu)
+    # Contoh: REPO="https://raw.githubusercontent.com/username/repo/main/tunnel-script"
+    REPO="https://raw.githubusercontent.com/YOUR_GITHUB_USERNAME/YOUR_REPO_NAME/main/tunnel-script"
+
+    # Make Config Directory
     mkdir -p /etc/xray
-    cp xray_config.json /etc/xray/config.json
+    mkdir -p /etc/nginx/sites-available
     
-    # Nginx Config
-    lb_conf="/etc/nginx/sites-available/tunnel"
-    cp nginx.conf "$lb_conf"
-    ln -s "$lb_conf" /etc/nginx/sites-enabled/tunnel
+    # 1. Auto-Create Xray Config (No need manual create)
+    log "Creating Xray Config..."
+    cat > /etc/xray/config.json <<EOF
+{
+  "log": {
+    "access": "/var/log/xray/access.log",
+    "error": "/var/log/xray/error.log",
+    "loglevel": "warning"
+  },
+  "inbounds": [
+    {
+      "port": 443,
+      "protocol": "vless",
+      "settings": {
+        "clients": [],
+        "decryption": "none",
+        "fallbacks": [
+          {
+            "dest": 81
+          },
+          {
+            "path": "/vmess",
+            "dest": 10001
+          },
+          {
+            "path": "/vless",
+            "dest": 10002
+          },
+          {
+            "path": "/trojan",
+            "dest": 10003
+          },
+          {
+            "path": "/ss",
+            "dest": 10004
+          }
+        ]
+      },
+      "streamSettings": {
+        "network": "tcp",
+        "security": "tls",
+        "tlsSettings": {
+          "certificates": [
+            {
+              "certificateFile": "/etc/xray/xray.crt",
+              "keyFile": "/etc/xray/xray.key"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "port": 10001,
+      "listen": "127.0.0.1",
+      "protocol": "vmess",
+      "settings": {
+        "clients": []
+      },
+      "streamSettings": {
+        "network": "ws",
+        "wsSettings": {
+          "path": "/vmess"
+        }
+      }
+    },
+    {
+      "port": 10002,
+      "listen": "127.0.0.1",
+      "protocol": "vless",
+      "settings": {
+        "clients": [],
+        "decryption": "none"
+      },
+      "streamSettings": {
+        "network": "ws",
+        "wsSettings": {
+          "path": "/vless"
+        }
+      }
+    },
+    {
+      "port": 10003,
+      "listen": "127.0.0.1",
+      "protocol": "trojan",
+      "settings": {
+        "clients": []
+      },
+      "streamSettings": {
+        "network": "ws",
+        "wsSettings": {
+          "path": "/trojan"
+        }
+      }
+    },
+    {
+      "port": 1080,
+      "protocol": "socks",
+      "settings": {
+        "auth": "password",
+        "accounts": [
+          {
+            "user": "admin",
+            "pass": "admin"
+          }
+        ],
+        "udp": true
+      }
+    },
+    {
+      "port": 8080,
+      "protocol": "http",
+      "settings": {
+        "userLevel": 0
+      }
+    }
+  ],
+  "outbounds": [
+    {
+      "protocol": "freedom",
+      "settings": {}
+    },
+    {
+      "protocol": "blackhole",
+      "settings": {},
+      "tag": "blocked"
+    }
+  ]
+}
+EOF
+
+    # 2. Auto-Create Nginx Config
+    log "Creating Nginx Config..."
+    cat > /etc/nginx/sites-available/tunnel <<EOF
+server {
+    listen 81;
+    server_name 127.0.0.1 localhost;
+
+    access_log /var/log/nginx/vps-access.log;
+    error_log /var/log/nginx/vps-error.log;
+
+    root /var/www/html;
+    index index.html;
+
+    location / {
+        try_files \$uri \$uri/ =404;
+    }
+}
+EOF
+
+    ln -s /etc/nginx/sites-available/tunnel /etc/nginx/sites-enabled/tunnel
     rm /etc/nginx/sites-enabled/default
     
-    # Install Menu
-    log "Installing Menu..."
-    cp menu.sh /usr/bin/menu
+    # 3. Download Menu from GitHub
+    log "Downloading Menu..."
+    wget -q -O /usr/bin/menu "${REPO}/menu.sh"
     chmod +x /usr/bin/menu
     
     # Enable Services
