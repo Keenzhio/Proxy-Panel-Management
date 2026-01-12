@@ -41,7 +41,7 @@ install_dependencies() {
 
 install_xray() {
     log "Installing Xray Core..."
-    bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ install
+    bash -c "$(curl -L https://raw.githubusercontent.com/XTLS/Xray-install/main/install-release.sh)" @ install
 }
 
 install_nginx() {
@@ -83,9 +83,7 @@ main() {
     install_nginx
     setup_domain
     
-    # Repo Config (Ganti INI dengan Username/Repo GitHub mu)
-    # Contoh: REPO="https://raw.githubusercontent.com/username/repo/main/tunnel-script"
-    REPO="https://raw.githubusercontent.com/YOUR_GITHUB_USERNAME/YOUR_REPO_NAME/main/tunnel-script"
+
 
     # Make Config Directory
     mkdir -p /etc/xray
@@ -245,7 +243,7 @@ EOF
     
     # 3. Download Menu from GitHub
     log "Downloading Menu..."
-    wget -q -O /usr/bin/menu "${REPO}/menu.sh"
+    wget -q -O /usr/bin/menu "https://raw.githubusercontent.com/Keenzhio/Proxy-Panel-Management/main/menu.sh"
     chmod +x /usr/bin/menu
     
     # Enable Services
