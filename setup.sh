@@ -32,7 +32,8 @@ error() {
 
 install_dependencies() {
     log "Updating system and installing dependencies..."
-    apt-get update && apt-get upgrade -y
+    export DEBIAN_FRONTEND=noninteractive
+    apt-get update && apt-get upgrade -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold"
     apt-get install -y curl wget git socat jq unzip zip net-tools gnupg2 dnsutils lsb-release
     
     # Set timezone to Asia/Jakarta (Common for ID users based on request language)
